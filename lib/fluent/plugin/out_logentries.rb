@@ -20,6 +20,7 @@ class Fluent::LogentriesOutput < Fluent::BufferedOutput
 
   SSL_HOST    = "api.logentries.com"
   NO_SSL_HOST = "data.logentries.com"
+  NEW_SSL_HOST = "data.logentries.com"
 
   def configure(conf)
     super
@@ -39,7 +40,11 @@ class Fluent::LogentriesOutput < Fluent::BufferedOutput
   def client
     @_socket ||= if @use_ssl
       context    = OpenSSL::SSL::SSLContext.new
-      socket     = TCPSocket.new SSL_HOST, @port
+      socket     = TCPSocket.new NEW_SSL_HOST, @port
+      socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true)
+      socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPIDLE, 50)
+      socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPINTVL, 10)
+      socket.setsockopt(Socket::SOL_TCP, Socket::TCP_KEEPCNT, 5)
       ssl_client = OpenSSL::SSL::SSLSocket.new socket, context
 
       ssl_client.connect
